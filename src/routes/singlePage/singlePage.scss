@@ -13,6 +13,7 @@
     flex: 3;
     height: 100%;
     overflow-y: scroll;
+    padding-bottom: 30px;
 
     @include md {
       flex: none;
