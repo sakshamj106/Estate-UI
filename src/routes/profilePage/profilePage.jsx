@@ -63,7 +63,7 @@ function ProfilePage(){
             >
               {(postResponse) => <List posts={postResponse.data.userPosts} />}
             </Await>
-          </Suspense>
+          </Suspense> 
           <div className="title">
             <h1>Saved List</h1>
           </div>

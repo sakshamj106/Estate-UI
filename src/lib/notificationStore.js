@@ -8,7 +8,9 @@ export const useNotificationStore = create((set) => ({
     set({ number: res.data });
   },
   decrease: () => {
+    console.log("Decreasing notification count");
     set((prev) => ({ number: prev.number - 1 }));
+    console.log("New notification count:", get().number);
   },
   reset: () => {
     set({ number: 0 });

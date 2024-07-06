@@ -7,12 +7,11 @@ import { SocketContext } from "../../context/SocketContext";
 import { useNotificationStore } from "../../lib/notificationStore";
 
 function Chat({ chats }) {
+  console.log("Chats:", chats);
   const [chat, setChat] = useState(null);
   const { currentUser } = useContext(AuthContext);
   const { socket } = useContext(SocketContext);
-
   const messageEndRef = useRef();
-
   const decrease = useNotificationStore((state) => state.decrease);
 
   useEffect(() => {
@@ -22,8 +21,14 @@ function Chat({ chats }) {
   const handleOpenChat = async (id, receiver) => {
     try {
       const res = await apiRequest("/chats/" + id);
+      console.log("Chat data received:", res.data); // Debugging
       if (!res.data.seenBy.includes(currentUser.id)) {
+        // Mark chat as read in the backend
+        await apiRequest.put("/chats/read/" + id);
+        // Decrease notification count
+        console.log("Calling decrease function");
         decrease();
+        console.log("Notification count decreased");
       }
       setChat({ ...res.data, receiver });
     } catch (err) {
@@ -33,19 +38,15 @@ function Chat({ chats }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const formData = new FormData(e.target);
     const text = formData.get("text");
 
     if (!text) return;
+
     try {
       const res = await apiRequest.post("/messages/" + chat.id, { text });
       setChat((prev) => ({ ...prev, messages: [...prev.messages, res.data] }));
       e.target.reset();
-      console.log("Emitting sendMessage event:", {
-        receiverId: chat.receiver.id,
-        data: res.data,
-      });
       socket.emit("sendMessage", {
         receiverId: chat.receiver.id,
         data: res.data,
@@ -56,33 +57,17 @@ function Chat({ chats }) {
   };
 
   useEffect(() => {
-    const handleGetMessage = (data) => {
-      if (chat && chat.id === data.chatId) {
-        console.log("Received message:", data);
-        setChat((prev) => ({ ...prev, messages: [...prev.messages, data] }));
-        read();
-      }
-    };
-  
     if (chat && socket) {
-      console.log("Setting up getMessage listener");
-      socket.on("getMessage", handleGetMessage);
-  
-      return () => {
-        socket.off("getMessage", handleGetMessage);
-        console.log("Removing getMessage listener");
-      };
+      socket.on("getMessage", (data) => {
+        if (chat.id === data.chatId) {
+          setChat((prev) => ({ ...prev, messages: [...prev.messages, data] }));
+        }
+      });
     }
+    return () => {
+      socket.off("getMessage");
+    };
   }, [socket, chat]);
-  
-
-  const read = async () => {
-    try {
-      await apiRequest.put("/chats/read/" + chat.id);
-    } catch (err) {
-      console.log(err);
-    }
-  };
 
   return (
     <div className="chat">
@@ -100,7 +85,7 @@ function Chat({ chats }) {
             }}
             onClick={() => handleOpenChat(c.id, c.receiver)}
           >
-            <img src={c.receiver.avatar || "/noavatar.jpg"} alt="" />
+            <img src={c.receiver.avatar || "/nop.png"} alt="" />
             <span>{c.receiver.username}</span>
             <p>{c.lastMessage}</p>
           </div>
@@ -110,31 +95,33 @@ function Chat({ chats }) {
         <div className="chatBox">
           <div className="top">
             <div className="user">
-              <img src={chat.receiver.avatar || "noavatar.jpg"} alt="" />
+              <img src={chat.receiver.avatar || "/nop.png"} alt="" />
               {chat.receiver.username}
             </div>
-            <span className="close" onClick={() => setChat(null)}>
-              X
-            </span>
+            <span className="close" onClick={() => setChat(null)}>X</span>
           </div>
           <div className="center">
-            {chat.messages.map((message) => (
-              <div
-                className="chatMessage"
-                style={{
-                  alignSelf:
-                    message.userId === currentUser.id
-                      ? "flex-end"
-                      : "flex-start",
-                  textAlign:
-                    message.userId === currentUser.id ? "right" : "left",
-                }}
-                key={message.id}
-              >
-                <p>{message.text}</p>
-                <span>{format(message.createdAt)}</span>
-              </div>
-            ))}
+            {chat.messages && chat.messages.length > 0 ? (
+              chat.messages.map((message) => (
+                <div
+                  className="chatMessage own"
+                  style={{
+                    alignSelf:
+                      message.userId === currentUser.id
+                        ? "flex-end"
+                        : "flex-start",
+                    textAlign:
+                      message.userId === currentUser.id ? "right" : "left",
+                  }}
+                  key={message.id}
+                >
+                  <p>{message.text}</p>
+                  <span>{format(message.createdAt)}</span>
+                </div>
+              ))
+            ) : (
+              <p>No messages yet.</p>
+            )}
             <div ref={messageEndRef}></div>
           </div>
           <form onSubmit={handleSubmit} className="bottom">
@@ -148,3 +135,4 @@ function Chat({ chats }) {
 }
 
 export default Chat;
+

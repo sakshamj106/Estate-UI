@@ -37,7 +37,7 @@ function Navbar() {
             />
             <span>{currentUser.username}</span>
             <Link to="/profile" className="profile">
-              <div className="notification">{number}</div>
+              { number > 0 && <div className="notification">{number}</div>}
               <span>Profile</span>
             </Link>
           </div>
