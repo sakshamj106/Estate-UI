@@ -13,11 +13,10 @@ function HomePage() {
                 <div className="wrapper">
                     <h1 className='title'>Find Real Estate & Get your Dream Place</h1>
                     <p>
-                        Lorem ipsum dolor sit amet consectetur, adipisicing elit. 
-                        Nostrum, fuga perspiciatis reiciendis omnis illum eligendi? 
-                        Error sapiente minima a laudantium assumenda, voluptatum quisquam 
-                        tenetur quam voluptatibus accusantium, quibusdam perspiciatis ullam?
-                    </p>
+                    Welcome to NestQuest, the ultimate destination for all your real estate needs. 
+                    Whether you are buying, selling, or renting, our platform offers a seamless 
+                    experience to help you find your perfect home.</p>
+                    
                     <SearchBar/>
                     <div className="boxes">
                         <div className="box">
